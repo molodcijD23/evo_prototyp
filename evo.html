@@ -528,6 +528,56 @@
     background: rgba(80,160,255,0.25);
     box-shadow: 0 0 20px rgba(80,160,255,0.3);
   }
+
+  /* Styl pro obrazovku konce hry */
+  #gameOverScreen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #1a0000 0%, #050000 100%);
+    z-index: 250;
+    pointer-events: all;
+  }
+
+  #goTitle {
+    font-family: 'Orbitron', monospace;
+    font-size: 48px;
+    font-weight: 900;
+    color: #ff4040;
+    text-shadow: 0 0 40px rgba(255, 64, 64, 0.6);
+    margin-bottom: 12px;
+    letter-spacing: 3px;
+  }
+
+  .goStat {
+    font-size: 16px;
+    color: rgba(180,220,255,0.8);
+    margin-bottom: 8px;
+    font-family: 'Exo 2', sans-serif;
+  }
+
+  #restartBtn {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 14px 50px;
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid rgba(255, 80, 80, 0.5);
+    color: #ff8080;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.25s;
+    pointer-events: all;
+    margin-top: 30px;
+  }
+
+  #restartBtn:hover {
+    background: rgba(255, 80, 80, 0.25);
+    box-shadow: 0 0 20px rgba(255, 80, 80, 0.3);
+  }
 </style>
 </head>
 <body>
@@ -634,6 +684,14 @@
     </div>
   </div>
   <button id="startBtn">ZAČÍT EVOLUCI</button>
+</div>
+
+<!-- Struktura obrazovky konce hry -->
+<div id="gameOverScreen">
+  <div id="goTitle">BYL JSI POHLCEN!</div>
+  <div class="goStat">Dosažená úroveň: <span id="goLevel" style="color:#ffd700; font-weight:bold;">1</span></div>
+  <div class="goStat">Získané DNA: <span id="goDna" style="color:#7df0ff; font-weight:bold;">0</span></div>
+  <button id="restartBtn">HRÁT ZNOVU</button>
 </div>
 
 <script>
@@ -1620,6 +1678,52 @@ function checkLevelUp() {
   }
 }
 
+// Funkce pro ukončení hry (smrt hráče)
+function killPlayer() {
+  gameRunning = false;
+  document.getElementById('gameOverScreen').style.display = 'flex';
+  document.getElementById('goLevel').textContent = player.level;
+  document.getElementById('goDna').textContent = player.dna;
+  spawnParticles(player.x, player.y, '#ff4040', 35, 4.5, 1.2);
+}
+
+// Funkce pro kompletní reset stavu hry
+function resetGame() {
+  player.hp = 100;
+  player.maxHp = 100;
+  player.xp = 0;
+  player.level = 1;
+  player.dna = 0;
+  player.size = 28;
+  player.x = WORLD / 2;
+  player.y = WORLD / 2;
+  player.vx = 0;
+  player.vy = 0;
+  player.equippedParts = { mouth: null, eye: null, flagella: null, armor: null };
+  player.cellPoints = [1.1, 1.0, 0.9, 0.9, 1.0, 0.9, 0.9, 1.0];
+  player.diet = playerDiet;
+  player.sprintCooldown = 0;
+  player.sprintActive = false;
+  player.sprintTimer = 0;
+  player.spikeActive = false;
+  player.spikeCooldown = 0;
+
+  entities.length = 0;
+  particles.length = 0;
+  foodItems.length = 0;
+
+  document.getElementById('dnaCount').textContent = '0 DNA';
+  document.getElementById('hpBar').style.width = '100%';
+  document.getElementById('xpBar').style.width = '0%';
+
+  recalcStats();
+  updateDietUI();
+
+  // Skryje obrazovku konce hry a vrátí na výběr stravování
+  document.getElementById('gameOverScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'flex';
+}
+
 function addKillMsg(text) {
   const feed = document.getElementById('killFeed');
   const div = document.createElement('div');
@@ -1633,6 +1737,12 @@ function addKillMsg(text) {
 
 // ─── AKTUALIZACE HRÁČE ───────────────────────────────────────────────────────
 function updatePlayer(dt) {
+  // Okamžitá kontrola smrti hráče
+  if (player.hp <= 0) {
+    killPlayer();
+    return;
+  }
+
   player.pulse += dt * 2.5;
 
   const mx = mouse.x - W/2 + camera.x;
@@ -2110,6 +2220,11 @@ document.getElementById('startBtn').addEventListener('click', () => {
   gameRunning = true;
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);
+});
+
+// Listener pro restartovací tlačítko
+document.getElementById('restartBtn').addEventListener('click', () => {
+  resetGame();
 });
 
 // Animace v editoru
