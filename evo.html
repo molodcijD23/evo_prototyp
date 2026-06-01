@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cell Stage</title>
+<title>Cell Stage - Evoluce Buňky</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
 
@@ -16,6 +16,7 @@
     overflow: hidden;
     width: 100vw;
     height: 100vh;
+    user-select: none;
   }
 
   #gameCanvas {
@@ -112,10 +113,10 @@
   #editor {
     position: absolute;
     top: 0; right: 0;
-    width: 280px;
+    width: 320px;
     height: 100%;
-    background: rgba(0,10,30,0.92);
-    border-left: 1px solid rgba(80,140,255,0.2);
+    background: rgba(0,10,30,0.95);
+    border-left: 1px solid rgba(80,140,255,0.25);
     display: flex;
     flex-direction: column;
     pointer-events: all;
@@ -157,17 +158,32 @@
 
   #cellPreview {
     width: 100%;
-    height: 160px;
+    height: 200px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     border-bottom: 1px solid rgba(80,140,255,0.1);
-    background: radial-gradient(ellipse at center, rgba(0,30,80,0.5) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(0,30,80,0.5) 0%, transparent 75%);
+    position: relative;
   }
 
   #previewCanvas {
-    width: 140px;
-    height: 140px;
+    width: 160px;
+    height: 160px;
+    cursor: crosshair;
+    background: rgba(255,255,255,0.02);
+    border-radius: 50%;
+    border: 1px dashed rgba(80,140,255,0.15);
+  }
+
+  #editorInstructions {
+    font-size: 10px;
+    color: #80c0ff;
+    margin-top: 4px;
+    font-family: 'Orbitron', monospace;
+    text-align: center;
+    opacity: 0.8;
   }
 
   #partTabs {
@@ -177,8 +193,8 @@
 
   .partTab {
     flex: 1;
-    padding: 8px 4px;
-    font-size: 10px;
+    padding: 8px 2px;
+    font-size: 9px;
     text-align: center;
     cursor: pointer;
     color: rgba(180,220,255,0.5);
@@ -191,6 +207,22 @@
 
   .partTab:hover { color: rgba(180,220,255,0.8); }
   .partTab.active { color: #7df0ff; border-bottom-color: #7df0ff; }
+
+  #physicsStats {
+    background: rgba(0,20,50,0.4);
+    padding: 10px;
+    border-bottom: 1px solid rgba(80,140,255,0.15);
+    font-size: 11px;
+  }
+
+  .physicsRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .physicsLabel { color: rgba(180,220,255,0.6); }
+  .physicsValue { font-family: 'Orbitron', monospace; color: #7df0ff; font-weight: bold; }
 
   #partsList {
     flex: 1;
@@ -227,16 +259,12 @@
     border-color: rgba(80,160,255,0.6);
   }
 
-  .partCard.herb {
-    border-color: rgba(60,200,80,0.3);
-  }
+  .partCard.herb { border-color: rgba(60,200,80,0.3); }
   .partCard.herb:hover, .partCard.herb.equipped {
     background: rgba(60,200,80,0.12);
     border-color: rgba(60,200,80,0.7);
   }
-  .partCard.carn {
-    border-color: rgba(220,60,60,0.3);
-  }
+  .partCard.carn { border-color: rgba(220,60,60,0.3); }
   .partCard.carn:hover, .partCard.carn.equipped {
     background: rgba(220,60,60,0.12);
     border-color: rgba(220,60,60,0.7);
@@ -274,7 +302,7 @@
     top: 50%;
     right: 0;
     transform: translateY(-50%);
-    width: 32px; height: 60px;
+    width: 32px; height: 80px;
     background: rgba(0,20,60,0.9);
     border: 1px solid rgba(80,140,255,0.3);
     border-right: none;
@@ -535,7 +563,7 @@
     <canvas id="minimapCanvas" width="100" height="100"></canvas>
   </div>
 
-  <div id="levelUpMsg">LEVEL UP!</div>
+  <div id="levelUpMsg">NOVÁ ÚROVEŇ!</div>
   <div id="tooltip">
     <div class="tooltip-name" id="ttName"></div>
     <div class="tooltip-stat" id="ttStat1"></div>
@@ -549,20 +577,38 @@
     <button id="closeEditor">✕</button>
   </div>
   <div id="cellPreview">
-    <canvas id="previewCanvas" width="140" height="140"></canvas>
+    <canvas id="previewCanvas" width="160" height="160"></canvas>
+    <div id="editorInstructions">TAŽENÍM DOTVÁŘEJ SVOU BUŇKU</div>
   </div>
   <div id="partTabs">
-    <div class="partTab active" data-cat="all">VŠE</div>
     <div class="partTab" data-cat="shape">TVAR</div>
-    <div class="partTab" data-cat="mouth">TLAMA</div>
+    <div class="partTab active" data-cat="all">VŠE</div>
+    <div class="partTab" data-cat="mouth">ÚSTA</div>
     <div class="partTab" data-cat="eye">OKO</div>
-    <div class="partTab" data-cat="flagella">FLAGELA</div>
-    <div class="partTab" data-cat="armor">BRNĚNÍ</div>
+    <div class="partTab" data-cat="flagella">BIČÍK</div>
+    <div class="partTab" data-cat="armor">PANCIER</div>
   </div>
+
+  <!-- Reálná fyzikální analýza tvaru buňky -->
+  <div id="physicsStats">
+    <div class="physicsRow">
+      <span class="physicsLabel">Protáhlost (Elongace):</span>
+      <span class="physicsValue" id="physElong">100%</span>
+    </div>
+    <div class="physicsRow">
+      <span class="physicsLabel">Ostrost čela (Aerodynamika):</span>
+      <span class="physicsValue" id="physFront">100%</span>
+    </div>
+    <div class="physicsRow">
+      <span class="physicsLabel">Hladkost (Celistvost):</span>
+      <span class="physicsValue" id="physSmooth">100%</span>
+    </div>
+  </div>
+
   <div id="aeroBar" style="padding:6px 10px;border-bottom:1px solid rgba(80,140,255,0.12);display:flex;align-items:center;gap:8px;">
-    <span style="font-size:10px;color:rgba(180,220,255,0.5);font-family:Orbitron,monospace;letter-spacing:1px;">AERODYN.</span>
+    <span style="font-size:10px;color:rgba(180,220,255,0.5);font-family:Orbitron,monospace;letter-spacing:1px;">HYDRODYN.</span>
     <div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">
-      <div id="aeroFill" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#ff6040,#40e0ff);width:50%;transition:width 0.4s;"></div>
+      <div id="aeroFill" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#ff6040,#40e0ff);width:50%;transition:width 0.1s;"></div>
     </div>
     <span id="aeroVal" style="font-size:10px;font-family:Orbitron,monospace;color:#7df0ff;min-width:32px;text-align:right;">50%</span>
     <span id="speedVal" style="font-size:10px;color:#a0ffa0;min-width:42px;text-align:right;">rychlost</span>
@@ -598,7 +644,7 @@ const previewCtx = previewCanvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimapCanvas');
 const mmCtx = minimapCanvas.getContext('2d');
 
-// World
+// Svět
 const WORLD = 3000;
 let W = window.innerWidth, H = window.innerHeight;
 canvas.width = W; canvas.height = H;
@@ -608,97 +654,42 @@ window.addEventListener('resize', () => {
   canvas.width = W; canvas.height = H;
 });
 
-// ─── PARTS DEFINITION ────────────────────────────────────────────────────────
+// ─── DEFINICE ČÁSTÍ (PARTS) ──────────────────────────────────────────────────
 const PARTS_DEF = {
   mouths: [
-    { id:'mouth_filter', name:'Filtrační tlama', cat:'mouth', diet:'herb', stats:{speed:0,attack:0,defense:1,suck:2}, desc:'Filtruje potravu', color:'#3cc850' },
-    { id:'mouth_bite_s', name:'Malý chrup', cat:'mouth', diet:'herb', stats:{speed:0,attack:1,defense:0,suck:1}, desc:'Lehký sousto', color:'#7de890' },
-    { id:'mouth_gnaw',   name:'Ohlodávač',  cat:'mouth', diet:'herb', stats:{speed:0,attack:1,defense:1,suck:0}, desc:'Ohlodává trávu', color:'#5de870' },
-    { id:'mouth_fang',   name:'Tesák',      cat:'mouth', diet:'carn', stats:{speed:0,attack:3,defense:0,suck:0}, desc:'Ostré zuby', color:'#ff6060' },
-    { id:'mouth_jaw',    name:'Čelisti',    cat:'mouth', diet:'carn', stats:{speed:0,attack:4,defense:0,suck:0}, desc:'Silné čelisti', color:'#e04040' },
+    { id:'mouth_filter', name:'Filtrační tlama', cat:'mouth', diet:'herb', stats:{speed:0,attack:0,defense:1,suck:2}, desc:'Filtruje plankton z vody', color:'#3cc850' },
+    { id:'mouth_bite_s', name:'Malý hryz', cat:'mouth', diet:'herb', stats:{speed:0,attack:1,defense:0,suck:1}, desc:'Snadné sousto', color:'#7de890' },
+    { id:'mouth_gnaw',   name:'Ohlodávač',  cat:'mouth', diet:'herb', stats:{speed:0,attack:1,defense:1,suck:0}, desc:'Ohlodává řasy', color:'#5de870' },
+    { id:'mouth_fang',   name:'Tesák',      cat:'mouth', diet:'carn', stats:{speed:0,attack:3,defense:0,suck:0}, desc:'Ostré zuby k trhání', color:'#ff6060' },
+    { id:'mouth_jaw',    name:'Čelisti',    cat:'mouth', diet:'carn', stats:{speed:0,attack:4,defense:0,suck:0}, desc:'Velmi silný stisk', color:'#e04040' },
     { id:'mouth_sucker', name:'Přísavka',   cat:'mouth', diet:'carn', stats:{speed:0,attack:2,defense:0,suck:3}, desc:'Saje životní sílu', color:'#cc2020' },
   ],
   eyes: [
-    { id:'eye_simple',  name:'Jednoduché oko', cat:'eye', diet:'none', stats:{range:1,speed:0}, desc:'Základní vidění', color:'#80c0ff' },
-    { id:'eye_double',  name:'Dvojité oko',    cat:'eye', diet:'none', stats:{range:2,speed:0.5}, desc:'Lepší přehled', color:'#60a0ff' },
-    { id:'eye_electric',name:'Elektro-oko',    cat:'eye', diet:'none', stats:{range:3,speed:1}, desc:'Elektrická detekce', color:'#f0e040' },
-    { id:'eye_carn',    name:'Dravčí oko',     cat:'eye', diet:'carn', stats:{range:2,speed:1,attack:0.5}, desc:'Sleduje kořist', color:'#ff8040' },
+    { id:'eye_simple',  name:'Jednoduché oko', cat:'eye', diet:'none', stats:{range:1,speed:0}, desc:'Základní detekce světla', color:'#80c0ff' },
+    { id:'eye_double',  name:'Dvojité oko',    cat:'eye', diet:'none', stats:{range:2,speed:0.5}, desc:'Lepší prostorový přehled', color:'#60a0ff' },
+    { id:'eye_electric',name:'Elektro-oko',    cat:'eye', diet:'none', stats:{range:3,speed:1}, desc:'Elektromagnetické vnímání', color:'#f0e040' },
+    { id:'eye_carn',    name:'Dravčí oko',     cat:'eye', diet:'carn', stats:{range:2,speed:1,attack:0.5}, desc:'Zaostřuje na kořist', color:'#ff8040' },
   ],
   flagella: [
-    { id:'flag_basic',   name:'Základní bičík',  cat:'flagella', diet:'none', stats:{speed:1,turn:1},   desc:'Základní pohyb', color:'#a0d0ff' },
-    { id:'flag_double',  name:'Dvojitý bičík',   cat:'flagella', diet:'none', stats:{speed:2,turn:1.5}, desc:'Rychlejší pohyb', color:'#80b8ff' },
-    { id:'flag_fin',     name:'Ploutev',          cat:'flagella', diet:'none', stats:{speed:1.5,turn:2}, desc:'Obratné zatáčení', color:'#60a0f0' },
-    { id:'flag_spike',   name:'Ostnatá ploutev',  cat:'flagella', diet:'carn', stats:{speed:1.5,turn:1,attack:1}, desc:'Řeže nepřátele', color:'#ff7060' },
-    { id:'flag_jet',     name:'Tryskový bičík',   cat:'flagella', diet:'herb', stats:{speed:3,turn:0.5}, desc:'Velmi rychlý', color:'#40ffa0' },
+    { id:'flag_basic',   name:'Základní bičík',  cat:'flagella', diet:'none', stats:{speed:1,turn:1},   desc:'Základní pohon', color:'#a0d0ff' },
+    { id:'flag_double',  name:'Dvojitý bičík',   cat:'flagella', diet:'none', stats:{speed:2,turn:1.5}, desc:'Rychlejší reaktivní pohyb', color:'#80b8ff' },
+    { id:'flag_fin',     name:'Ploutev',          cat:'flagella', diet:'none', stats:{speed:1.5,turn:2}, desc:'Umožňuje obratné zatáčení', color:'#60a0f0' },
+    { id:'flag_spike',   name:'Ostnatá ploutev',  cat:'flagella', diet:'carn', stats:{speed:1.5,turn:1,attack:1}, desc:'Řeže nepřátele za vámi', color:'#ff7060' },
+    { id:'flag_jet',     name:'Tryskový bičík',   cat:'flagella', diet:'herb', stats:{speed:3,turn:0.5}, desc:'Extrémní rychlost vpřed', color:'#40ffa0' },
   ],
   armor: [
-    { id:'arm_spike_s', name:'Malý osten',   cat:'armor', diet:'herb', stats:{defense:1,spikes:1}, desc:'Odráží útočníky', color:'#a0e060' },
-    { id:'arm_spike_l', name:'Velký osten',  cat:'armor', diet:'herb', stats:{defense:2,spikes:2}, desc:'Silná ochrana', color:'#80c040' },
-    { id:'arm_shell',   name:'Pancíř',       cat:'armor', diet:'herb', stats:{defense:3,speed:-0.5}, desc:'Těžký ale pevný', color:'#90b870' },
-    { id:'arm_claw',    name:'Spár',         cat:'armor', diet:'carn', stats:{defense:1,attack:2}, desc:'Útočí i brání', color:'#ff6040' },
-    { id:'arm_poison',  name:'Jedový vak',   cat:'armor', diet:'carn', stats:{defense:1,poison:1}, desc:'Jedovatý dotek', color:'#c060f0' },
-    { id:'arm_plates',  name:'Šupiny',       cat:'armor', diet:'none', stats:{defense:2}, desc:'Přirozená ochrana', color:'#8090b0' },
+    { id:'arm_spike_s', name:'Malý osten',   cat:'armor', diet:'herb', stats:{defense:1,spikes:1}, desc:'Odráží dotěrné útočníky', color:'#a0e060' },
+    { id:'arm_spike_l', name:'Velký osten',  cat:'armor', diet:'herb', stats:{defense:2,spikes:2}, desc:'Robustní ochrana i proti velkým dravcům', color:'#80c040' },
+    { id:'arm_shell',   name:'Pancíř',       cat:'armor', diet:'herb', stats:{defense:3,speed:-0.5}, desc:'Těžký, ale téměř neprůstřelný', color:'#90b870' },
+    { id:'arm_claw',    name:'Klepeto',      cat:'armor', diet:'carn', stats:{defense:1,attack:2}, desc:'Slouží k útoku i k obraně', color:'#ff6040' },
+    { id:'arm_poison',  name:'Jedový vak',   cat:'armor', diet:'carn', stats:{defense:1,poison:1}, desc:'Zanechává toxické stopy', color:'#c060f0' },
+    { id:'arm_plates',  name:'Šupiny',       cat:'armor', diet:'none', stats:{defense:2}, desc:'Přirozená biologická ochrana', color:'#8090b0' },
   ]
 };
 
 const ALL_PARTS = [...PARTS_DEF.mouths,...PARTS_DEF.eyes,...PARTS_DEF.flagella,...PARTS_DEF.armor];
 
-// ─── CELL SHAPES ─────────────────────────────────────────────────────────────
-// aero: 0-100, higher = faster. drag: mass/resistance penalty to speed.
-// Points define normalised outline (unit circle = points on circle of radius 1).
-// Each shape also has a drawFn name used by drawCellBody().
-const CELL_SHAPES = [
-  {
-    id:'round',    name:'Kulatá',      aero:55,  drag:0,
-    desc:'Vyvážený tvar. Žádné bonusy ani postihy.',
-    color:'#80c8ff',
-    points: null, // circle — default blob
-  },
-  {
-    id:'oval',     name:'Oválná',      aero:72,  drag:-0.05,
-    desc:'Protáhlá — rychlejší než kulatá, menší průřez.',
-    color:'#60e0a0',
-    points: null, // drawn as ellipse 1.5:1
-  },
-  {
-    id:'teardrop', name:'Kapka',       aero:88,  drag:-0.08,
-    desc:'Nejrychlejší tvar. Výborná hydrodynamika.',
-    color:'#40d8ff',
-    points: null,
-  },
-  {
-    id:'star',     name:'Hvězdice',    aero:28,  drag:0.15,
-    desc:'Pomalá ale ostré výběžky způsobují pasivní poškození.',
-    color:'#ffd040',
-    points: null,
-  },
-  {
-    id:'flat',     name:'Plochá',      aero:38,  drag:0.1,
-    desc:'Nízký profil, těžko zasáhnout. Pomalejší.',
-    color:'#d0a0ff',
-    points: null,
-  },
-  {
-    id:'spiky',    name:'Ostnatá',     aero:18,  drag:0.2,
-    desc:'Velmi pomalá. Vysoké pasivní poškození kontaktem.',
-    color:'#ff8060',
-    points: null,
-  },
-  {
-    id:'crescent', name:'Srpek',       aero:65,  drag:-0.03,
-    desc:'Dobrá rychlost, lepší zatáčení.',
-    color:'#c0e860',
-    points: null,
-  },
-  {
-    id:'diamond',  name:'Diamant',     aero:60,  drag:0,
-    desc:'Ostrý tvar, průměrná rychlost, bonus k útoku.',
-    color:'#80e8ff',
-    points: null,
-  },
-];
-
-// ─── GAME STATE ──────────────────────────────────────────────────────────────
+// ─── HERNÍ STAV ──────────────────────────────────────────────────────────────
 let gameRunning = false;
 let playerDiet = 'herb';
 
@@ -718,7 +709,11 @@ const player = {
     mouth: null, eye: null, flagella: null, armor: null
   },
   diet: 'herb',
-  cellShape: 'round',
+  
+  // Vlastní tvar reprezentovaný 8 radiálními body (vzdálenost od středu 0.3 až 1.8)
+  // Index 0 je přední část, index 4 je zadní část.
+  cellPoints: [1.1, 1.0, 0.9, 0.9, 1.0, 0.9, 0.9, 1.0], 
+  
   isSprinting: false,
   sprintCooldown: 0,
   sprintActive: false,
@@ -733,7 +728,103 @@ const particles = [];
 const foodItems = [];
 const camera = { x: 0, y: 0 };
 
-// ─── INPUT ───────────────────────────────────────────────────────────────────
+// ─── INTERAKTIVNÍ EDITOR TVARU ──────────────────────────────────────────────
+let activeHandle = -1; // Index taženého bodu tvaru
+const PREVIEW_CENTER = 80; // Střed preview canvasu (160/2)
+const PREVIEW_RADIUS = 40; // Základní poloměr vykreslování bodů
+
+previewCanvas.addEventListener('mousedown', e => {
+  const rect = previewCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  
+  let minDist = 18;
+  activeHandle = -1;
+  
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const r = PREVIEW_RADIUS * player.cellPoints[i];
+    const px = PREVIEW_CENTER + Math.cos(angle) * r;
+    const py = PREVIEW_CENTER + Math.sin(angle) * r;
+    const dist = Math.hypot(mx - px, my - py);
+    if (dist < minDist) {
+      minDist = dist;
+      activeHandle = i;
+    }
+  }
+});
+
+window.addEventListener('mousemove', e => {
+  if (activeHandle === -1) return;
+  const rect = previewCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  
+  const dx = mx - PREVIEW_CENTER;
+  const dy = my - PREVIEW_CENTER;
+  const dist = Math.hypot(dx, dy);
+  
+  const newRadiusFactor = dist / PREVIEW_RADIUS;
+  player.cellPoints[activeHandle] = Math.max(0.35, Math.min(1.8, newRadiusFactor));
+  
+  recalcStats();
+  drawPreviewCell();
+});
+
+window.addEventListener('mouseup', () => {
+  activeHandle = -1;
+});
+
+// Podpora dotyků na mobilech
+previewCanvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+  const rect = previewCanvas.getBoundingClientRect();
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  
+  let minDist = 25;
+  activeHandle = -1;
+  
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const r = PREVIEW_RADIUS * player.cellPoints[i];
+    const px = PREVIEW_CENTER + Math.cos(angle) * r;
+    const py = PREVIEW_CENTER + Math.sin(angle) * r;
+    const dist = Math.hypot(mx - px, my - py);
+    if (dist < minDist) {
+      minDist = dist;
+      activeHandle = i;
+    }
+  }
+  e.preventDefault();
+});
+
+previewCanvas.addEventListener('touchmove', e => {
+  if (activeHandle === -1 || e.touches.length === 0) return;
+  const t = e.touches[0];
+  const rect = previewCanvas.getBoundingClientRect();
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  
+  const dx = mx - PREVIEW_CENTER;
+  const dy = my - PREVIEW_CENTER;
+  const dist = Math.hypot(dx, dy);
+  
+  const newRadiusFactor = dist / PREVIEW_RADIUS;
+  player.cellPoints[activeHandle] = Math.max(0.35, Math.min(1.8, newRadiusFactor));
+  
+  recalcStats();
+  drawPreviewCell();
+  e.preventDefault();
+});
+
+previewCanvas.addEventListener('touchend', () => {
+  activeHandle = -1;
+});
+
+
+// ─── VSTUPY KLÁVESNICE A MYŠI ───────────────────────────────────────────────
 const keys = {};
 const mouse = { x: W/2, y: H/2, down: false };
 
@@ -743,7 +834,7 @@ canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.cli
 canvas.addEventListener('mousedown', () => mouse.down = true);
 canvas.addEventListener('mouseup', () => mouse.down = false);
 
-// ─── NOISE / WORLD GEN ───────────────────────────────────────────────────────
+// ─── NOISE / GENERÁTOR SVĚTA ────────────────────────────────────────────────
 function noise2D(x, y) {
   const X = Math.floor(x), Y = Math.floor(y);
   const xf = x - X, yf = y - Y;
@@ -757,7 +848,7 @@ function noise2D(x, y) {
   return lerp(lerp(grad(aa,xf,yf),grad(ba,xf-1,yf),fade(xf)),lerp(grad(ab,xf,yf-1),grad(bb,xf-1,yf-1),fade(xf)),fade(yf));
 }
 
-// ─── WORLD BIOMES ─────────────────────────────────────────────────────────────
+// ─── BIOMY SVETA ────────────────────────────────────────────────────────────
 const BIOMES = [];
 function genBiomes() {
   for (let i = 0; i < 12; i++) {
@@ -769,7 +860,7 @@ function genBiomes() {
   }
 }
 
-// ─── FOOD GENERATION ─────────────────────────────────────────────────────────
+// ─── GENERACE POTRAVY ───────────────────────────────────────────────────────
 function spawnFood() {
   for (let i = 0; i < 300; i++) {
     const t = Math.random();
@@ -784,7 +875,7 @@ function spawnFood() {
   }
 }
 
-// ─── AI CELLS ────────────────────────────────────────────────────────────────
+// ─── AI BUNKY ────────────────────────────────────────────────────────────────
 const AI_TYPES = [
   { name:'Řasinka',    diet:'herb', color:'#4de870', size:18, speed:1.8, attack:0.5, hp:30,  xp:5,  spikes:1 },
   { name:'Mikrob',     diet:'herb', color:'#70d870', size:22, speed:2.0, attack:1.0, hp:50,  xp:10, spikes:0 },
@@ -806,6 +897,13 @@ function spawnAI(count) {
       x = Math.random()*WORLD;
       y = Math.random()*WORLD;
     } while (Math.hypot(x-player.x, y-player.y) < 200);
+    
+    const aiPoints = [];
+    const variance = t.spikes > 0 ? 0.4 : 0.15;
+    for (let p = 0; p < 8; p++) {
+      aiPoints.push(0.85 + (Math.random() - 0.5) * variance);
+    }
+
     entities.push({
       x, y, vx:0, vy:0,
       angle: Math.random()*Math.PI*2,
@@ -818,6 +916,7 @@ function spawnAI(count) {
       xp: t.xp * lvl,
       diet: t.diet,
       spikes: t.spikes,
+      cellPoints: aiPoints,
       aiState: 'wander',
       aiTimer: 0,
       target: null,
@@ -828,7 +927,6 @@ function spawnAI(count) {
   }
 }
 
-// ─── PARTICLES ────────────────────────────────────────────────────────────────
 function spawnParticles(x, y, color, n, speed, life) {
   for (let i = 0; i < n; i++) {
     const a = Math.random()*Math.PI*2;
@@ -837,8 +935,8 @@ function spawnParticles(x, y, color, n, speed, life) {
   }
 }
 
-// ─── DRAWING HELPERS ─────────────────────────────────────────────────────────
-function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, isPlayer) {
+// ─── HLAVNÍ KRESLENÍ BUNĚK ──────────────────────────────────────────────────
+function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, isPlayer, customPoints) {
   c.save();
   c.translate(x, y);
   c.rotate(angle);
@@ -846,7 +944,7 @@ function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, is
   const p = 1 + 0.03*Math.sin(pulse);
   c.scale(p, p);
 
-  // Body glow
+  // Záře buňky
   if (isPlayer) {
     const g = c.createRadialGradient(0,0,size*0.2,0,0,size*1.4);
     g.addColorStop(0, color+'33');
@@ -857,65 +955,48 @@ function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, is
     c.fill();
   }
 
-  // Draw nucleus/body
-  const bodyColor = color;
   const darkColor = shadeColor(color, -40);
   const lightColor = shadeColor(color, 40);
 
-  // Determine shape id for this cell
-  const shapeId = isPlayer ? player.cellShape : 'round';
-  const wobble = Math.sin(pulse * 2) * size * 0.04;
+  const wobble = Math.sin(pulse * 2) * size * 0.03;
 
-  // Outer membrane
   c.strokeStyle = lightColor;
-  c.lineWidth = 2;
+  c.lineWidth = 2.5;
   c.beginPath();
-  drawCellBody(c, size, shapeId, wobble);
+  drawCustomBody(c, size, customPoints, wobble);
   c.stroke();
 
-  // Body fill
   const bg = c.createRadialGradient(-size*0.2,-size*0.2,0,0,0,size*1.2);
   bg.addColorStop(0, lightColor);
-  bg.addColorStop(0.5, bodyColor);
+  bg.addColorStop(0.5, color);
   bg.addColorStop(1, darkColor);
   c.fillStyle = bg;
   c.beginPath();
-  drawCellBody(c, size, shapeId, wobble);
+  drawCustomBody(c, size, customPoints, wobble);
   c.fill();
 
-  // Nucleus (adapt position to shape)
-  const nucOX = shapeId==='teardrop' ? -size*0.2 : (shapeId==='crescent' ? size*0.1 : -size*0.1);
-  const nucOY = -size*0.1;
-  const nucRX = shapeId==='flat' ? size*0.45 : size*0.35;
-  const nucRY = shapeId==='flat' ? size*0.2  : size*0.3;
   c.fillStyle = shadeColor(color, 20)+'99';
   c.beginPath();
-  c.ellipse(nucOX, nucOY, nucRX, nucRY, 0.3, 0, Math.PI*2);
+  c.ellipse(-size*0.08, -size*0.05, size*0.35, size*0.28, 0.2, 0, Math.PI*2);
   c.fill();
 
-  // Parts rendering
   if (parts) {
     const eq = isPlayer ? player.equippedParts : {};
 
-    // Draw flagella
     const flag = ALL_PARTS.find(p => p.id === eq.flagella);
     if (flag) drawFlagella(c, size, flag, pulse);
 
-    // Draw mouth
     const mouth = ALL_PARTS.find(p => p.id === eq.mouth);
     if (mouth) drawMouth(c, size, mouth);
     else drawDefaultMouth(c, size, diet);
 
-    // Draw eye
     const eye = ALL_PARTS.find(p => p.id === eq.eye);
     if (eye) drawEye(c, size, eye);
     else drawDefaultEye(c, size);
 
-    // Draw armor
     const armor = ALL_PARTS.find(p => p.id === eq.armor);
     if (armor) drawArmor(c, size, armor);
   } else {
-    // AI simple features
     drawDefaultMouth(c, size, diet);
     drawDefaultEye(c, size);
     if (diet === 'carn') {
@@ -931,7 +1012,6 @@ function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, is
     }
   }
 
-  // HP bar (above cell in world space)
   if (!isPlayer && hp < maxHp) {
     c.rotate(-angle);
     const bw = size*2.2, bh = 4;
@@ -946,102 +1026,91 @@ function drawCell(c, x, y, size, color, angle, diet, parts, pulse, hp, maxHp, is
   c.restore();
 }
 
-function drawBlobShape(c, cx, cy, r, points, roughness) {
-  const step = (Math.PI*2)/points;
-  c.moveTo(cx + r, cy);
-  for (let i = 0; i <= points; i++) {
-    const a = i * step;
-    const na = (i+1) * step;
-    const cr = r * (1 + roughness * Math.sin(i*2.3+0.5));
-    const nr = r * (1 + roughness * Math.sin((i+1)*2.3+0.5));
-    const ca = a + step*0.25;
-    const x1 = cx + cr * Math.cos(ca);
-    const y1 = cy + cr * Math.sin(ca);
-    const x2 = cx + nr * Math.cos(na - step*0.25);
-    const y2 = cy + nr * Math.sin(na - step*0.25);
-    c.bezierCurveTo(x1,y1,x2,y2, cx+nr*Math.cos(na), cy+nr*Math.sin(na));
+function drawCustomBody(c, size, pointRadii, wobble) {
+  if (!pointRadii || pointRadii.length !== 8) {
+    c.arc(0, 0, size, 0, Math.PI * 2);
+    return;
   }
-}
-
-// Draw the cell body based on chosen shape
-function drawCellBody(c, size, shapeId, wobble) {
+  
+  const coords = [];
   const w = wobble || 0;
-  switch(shapeId) {
-    case 'oval':
-      c.ellipse(0, 0, size*1.5, size*0.75, 0, 0, Math.PI*2);
-      break;
-    case 'teardrop':
-      c.moveTo(size*1.5, 0);
-      c.bezierCurveTo(size*1.5, -size*0.7,  size*0.4, -size*0.85, -size*0.6, -size*0.1 + w*3);
-      c.bezierCurveTo(-size*0.9, -size*0.04+w, -size*0.9, size*0.04-w, -size*0.6, size*0.1 - w*3);
-      c.bezierCurveTo(size*0.4, size*0.85, size*1.5, size*0.7, size*1.5, 0);
-      break;
-    case 'star': {
-      const spikes = 5;
-      for (let i = 0; i < spikes*2; i++) {
-        const a = (i/spikes)*Math.PI - Math.PI/2;
-        const r2 = i%2===0 ? size*1.3 : size*0.55;
-        if (i===0) c.moveTo(Math.cos(a)*r2, Math.sin(a)*r2);
-        else c.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
-      }
-      c.closePath();
-      break;
-    }
-    case 'flat':
-      c.ellipse(0, 0, size*1.6, size*0.5, 0, 0, Math.PI*2);
-      break;
-    case 'spiky': {
-      const sp = 7;
-      for (let i = 0; i < sp*2; i++) {
-        const a = (i/(sp))*Math.PI - Math.PI/2;
-        const r2 = i%2===0 ? size*1.4 : size*0.6;
-        if (i===0) c.moveTo(Math.cos(a)*r2, Math.sin(a)*r2);
-        else c.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
-      }
-      c.closePath();
-      break;
-    }
-    case 'crescent':
-      c.arc(0, 0, size, -Math.PI*0.7, Math.PI*0.7);
-      c.arc(size*0.35, 0, size*0.85, Math.PI*0.7+0.05, -Math.PI*0.7-0.05, true);
-      c.closePath();
-      break;
-    case 'diamond':
-      c.moveTo(size*1.3, 0);
-      c.lineTo(0, -size*0.85);
-      c.lineTo(-size*0.9, 0);
-      c.lineTo(0, size*0.85);
-      c.closePath();
-      break;
-    default: // round
-      drawBlobShape(c, 0, 0, size, 6, 0.15);
+  
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const wobbleFactor = (i >= 3 && i <= 5) ? 1 + Math.sin(w) * 0.05 : 1;
+    const r = size * pointRadii[i] * wobbleFactor;
+    coords.push({
+      x: Math.cos(angle) * r,
+      y: Math.sin(angle) * r
+    });
   }
+  
+  c.moveTo((coords[0].x + coords[7].x) / 2, (coords[0].y + coords[7].y) / 2);
+  for (let i = 0; i < 8; i++) {
+    const curr = coords[i];
+    const next = coords[(i + 1) % 8];
+    const xc = (curr.x + next.x) / 2;
+    const yc = (curr.y + next.y) / 2;
+    c.quadraticCurveTo(curr.x, curr.y, xc, yc);
+  }
+  c.closePath();
 }
 
-// Aero score 0-100 combining shape + parts
-function calcAero() {
-  const shape = CELL_SHAPES.find(s => s.id === player.cellShape) || CELL_SHAPES[0];
-  let aero = shape.aero;
-  // Flagella boost aero slightly
+// ─── DYNAMICKÝ VÝPOČET HYDRODYNAMIKY (AQUADYNAMIKY) ───────────────────────
+function calcDynamicAero() {
+  const points = player.cellPoints;
+  if (!points || points.length !== 8) return 50;
+
+  // 1. Podlouhlost (Elongace) - Poměr délky (X osa) k šířce (Y osa)
+  const length = points[0] + points[4];
+  const width = Math.max(points[2], points[6]) + Math.max(points[1], points[7]) * 0.5;
+  const ratio = length / (width || 0.1);
+  const targetRatio = 2.0;
+  const elongScore = Math.max(0, 100 - Math.abs(ratio - targetRatio) * 60);
+
+  // 2. Špičatost přední části (Aerodynamický klín)
+  const frontPointiness = points[0] - (points[1] + points[7]) / 2;
+  const frontScore = Math.max(0, Math.min(100, (frontPointiness + 0.3) * 150));
+
+  // 3. Drsnost / Celistvost povrchu (Plynulost tvaru)
+  let diffSum = 0;
+  for (let i = 0; i < 8; i++) {
+    diffSum += Math.abs(points[i] - points[(i + 1) % 8]);
+  }
+  const smoothScore = Math.max(10, Math.min(100, 110 - diffSum * 45));
+
+  // Aktualizace hodnot v UI
+  document.getElementById('physElong').textContent = Math.round(elongScore) + '%';
+  document.getElementById('physFront').textContent = Math.round(frontScore) + '%';
+  document.getElementById('physSmooth').textContent = Math.round(smoothScore) + '%';
+
+  let aero = elongScore * 0.4 + frontScore * 0.3 + smoothScore * 0.3;
+  
   const flag = ALL_PARTS.find(p => p.id === player.equippedParts.flagella);
-  if (flag) aero += (flag.stats.speed||0) * 3;
-  // Armor hurts aero
+  if (flag) aero += (flag.stats.speed || 0) * 3;
   const armor = ALL_PARTS.find(p => p.id === player.equippedParts.armor);
-  if (armor) aero -= (armor.stats.defense||0) * 4;
-  // Spiky/star shapes also add passive spike damage bonus
-  return Math.max(5, Math.min(100, aero));
+  if (armor) aero -= (armor.stats.defense || 0) * 4;
+
+  return Math.max(10, Math.min(100, aero));
 }
 
 function calcSpeedFromAero() {
-  const aero = calcAero();
-  const shape = CELL_SHAPES.find(s => s.id === player.cellShape) || CELL_SHAPES[0];
-  // Base: 1.5 at 0 aero, 4.5 at 100 aero, plus flagella flat bonus
-  let sp = 1.5 + (aero / 100) * 3.0;
+  const aero = calcDynamicAero();
+  let sp = 1.0 + (aero / 100) * 2.8;
+
   const flag = ALL_PARTS.find(p => p.id === player.equippedParts.flagella);
-  if (flag) sp += (flag.stats.speed||0) * 0.25;
-  return sp;
+  if (flag) sp += (flag.stats.speed || 0) * 0.25;
+
+  const sizeFactor = 28 / player.size;
+  return Math.max(1.0, sp * sizeFactor);
 }
 
+// Pomocná funkce pro získání aktuální rychlosti hráče
+function getPlayerSpeed() {
+  return calcSpeedFromAero();
+}
+
+// ─── KRESLENIE ÚST A OKA ─────────────────────────────────────────────────────
 function drawDefaultMouth(c, size, diet) {
   const mx = size * 0.55, my = 0;
   if (diet === 'carn') {
@@ -1324,13 +1393,11 @@ function shadeColor(col, amt) {
   return '#'+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0');
 }
 
-// ─── WORLD BG ─────────────────────────────────────────────────────────────────
+// ─── POZADÍ SVĚTA ───────────────────────────────────────────────────────────
 function drawWorld() {
-  // Ocean background
   ctx.fillStyle = '#001828';
   ctx.fillRect(0, 0, W, H);
 
-  // Animated water tiles
   const tileSize = 80;
   const camOffX = camera.x % tileSize;
   const camOffY = camera.y % tileSize;
@@ -1350,7 +1417,6 @@ function drawWorld() {
     }
   }
 
-  // Biome tints
   for (const b of BIOMES) {
     const sx = b.x - camera.x + W/2;
     const sy = b.y - camera.y + H/2;
@@ -1367,7 +1433,6 @@ function drawWorld() {
     ctx.fillRect(0,0,W,H);
   }
 
-  // Subtle grid
   ctx.strokeStyle = 'rgba(80,180,255,0.03)';
   ctx.lineWidth = 1;
   const gs = 120;
@@ -1376,7 +1441,6 @@ function drawWorld() {
   for (let x = gox; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y = goy; y < H; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-  // World border
   const bx = W/2 - camera.x, by = H/2 - camera.y;
   ctx.strokeStyle = 'rgba(255,100,100,0.5)';
   ctx.lineWidth = 4;
@@ -1385,7 +1449,7 @@ function drawWorld() {
   ctx.setLineDash([]);
 }
 
-// ─── AI BEHAVIOR ──────────────────────────────────────────────────────────────
+// ─── AI CHOVÁNÍ BUNĚK ────────────────────────────────────────────────────────
 function updateAI(e, dt) {
   e.pulse += dt * 3;
   e.aiTimer -= dt;
@@ -1440,7 +1504,7 @@ function updateAI(e, dt) {
   e.y = Math.max(e.size, Math.min(WORLD - e.size, e.y));
 }
 
-// ─── COLLISION ────────────────────────────────────────────────────────────────
+// ─── DETEKCE KOLIZÍ ──────────────────────────────────────────────────────────
 function checkCollisions() {
   const now = Date.now();
   if (!player._lastHit) player._lastHit = 0;
@@ -1450,14 +1514,17 @@ function checkCollisions() {
     const dx = player.x - e.x, dy = player.y - e.y;
     const dist = Math.hypot(dx, dy);
     const minDist = (player.size + e.size) * 0.8;
+    
     if (dist < minDist) {
       if (now - player._lastHit > 600) {
         player._lastHit = now;
+        
         if (e.size > player.size * 1.1 || e.diet === 'carn') {
           const dmg = e.attack * 10 * (1 - player.defense*0.05);
           player.hp = Math.max(0, player.hp - dmg);
           spawnParticles(player.x, player.y, '#ff4040', 5, 2, 0.4);
         }
+        
         if (player.spikes > 0) {
           const spikedmg = player.spikes * 8;
           e.hp -= spikedmg;
@@ -1465,6 +1532,7 @@ function checkCollisions() {
           if (e.hp <= 0) killEntity(e);
         }
       }
+      
       if (player.size > e.size * 1.1 && (player.diet === 'carn' || e.diet === 'herb')) {
         if (now - (e._lastHit||0) > 400) {
           e._lastHit = now;
@@ -1479,7 +1547,6 @@ function checkCollisions() {
     }
   }
 
-  // Food
   for (const f of foodItems) {
     if (!f.alive) continue;
     const dx = player.x - f.x, dy = player.y - f.y;
@@ -1496,6 +1563,7 @@ function checkCollisions() {
   }
 }
 
+// ─── KONZUMACE POTRAVY ───────────────────────────────────────────────────────
 function eatFood(f, xpGain) {
   f.alive = false;
   player.xp += xpGain;
@@ -1520,13 +1588,12 @@ function killEntity(e) {
   player.xp += e.xp;
   player.dna += Math.ceil(e.xp / 10);
   spawnParticles(e.x, e.y, e.type.color, 15, 3, 0.8);
-  addKillMsg(`Pohltil jsi: ${e.type.name}`);
+  addKillMsg(`Absorboval jsi: ${e.type.name}`);
   checkLevelUp();
   document.getElementById('dnaCount').textContent = player.dna + ' DNA';
 
   if (Math.random() < 0.3) {
     let rx = e.x, ry = e.y;
-    const bonus = Math.random();
     foodItems.push({ x: rx, y: ry, type: 'meat', size: 6+Math.random()*6, pulse:0, alive:true });
   }
 
@@ -1544,7 +1611,7 @@ function checkLevelUp() {
     player.hp = Math.min(player.hp + 20, player.maxHp);
     player.size = Math.min(70, player.size + 2);
     const msg = document.getElementById('levelUpMsg');
-    msg.textContent = `LEVEL ${player.level}!`;
+    msg.textContent = `ÚROVEŇ ${player.level}!`;
     msg.style.display = 'block';
     msg.style.animation = 'none';
     requestAnimationFrame(() => { msg.style.animation = ''; msg.style.display = 'block'; });
@@ -1564,11 +1631,10 @@ function addKillMsg(text) {
   while (feed.children.length > 5) feed.removeChild(feed.firstChild);
 }
 
-// ─── PLAYER UPDATE ────────────────────────────────────────────────────────────
+// ─── AKTUALIZACE HRÁČE ───────────────────────────────────────────────────────
 function updatePlayer(dt) {
   player.pulse += dt * 2.5;
 
-  // Target angle towards mouse
   const mx = mouse.x - W/2 + camera.x;
   const my = mouse.y - H/2 + camera.y;
   const targetAngle = Math.atan2(my - player.y, mx - player.x);
@@ -1577,7 +1643,6 @@ function updatePlayer(dt) {
   while (da < -Math.PI) da += Math.PI*2;
   player.angle += da * Math.min(1, dt * 6);
 
-  // Sprint cooldown tick
   if (player.sprintCooldown > 0) player.sprintCooldown -= dt;
   if (player.sprintActive) {
     player.sprintTimer -= dt;
@@ -1591,25 +1656,20 @@ function updatePlayer(dt) {
     spawnParticles(player.x, player.y, '#40e0ff', 12, 3, 0.5);
   }
 
-  // Spike cooldown tick
   if (player.spikeCooldown > 0) player.spikeCooldown -= dt;
 
-  // Speed
   let sp = getPlayerSpeed();
   if (player.isSprinting) sp *= 2.2;
 
-  // Auto-move towards mouse when button held or always
   const distToMouse = Math.hypot(mx - player.x, my - player.y);
   if (distToMouse > 20) {
     player.vx += Math.cos(player.angle) * sp * dt * 60 * 0.4;
     player.vy += Math.sin(player.angle) * sp * dt * 60 * 0.4;
   }
 
-  // Key movement
   if (keys['w'] || keys['arrowup']) { player.vx += Math.cos(player.angle)*sp*dt*60*0.3; player.vy += Math.sin(player.angle)*sp*dt*60*0.3; }
   if (keys['s'] || keys['arrowdown']) { player.vx -= Math.cos(player.angle)*sp*dt*20*0.1; player.vy -= Math.sin(player.angle)*sp*dt*20*0.1; }
 
-  // Friction
   const friction = 0.85;
   player.vx *= friction;
   player.vy *= friction;
@@ -1619,26 +1679,19 @@ function updatePlayer(dt) {
   player.x = Math.max(player.size, Math.min(WORLD - player.size, player.x));
   player.y = Math.max(player.size, Math.min(WORLD - player.size, player.y));
 
-  // HP regen
   if (player.hp < player.maxHp) player.hp = Math.min(player.maxHp, player.hp + dt * 2);
 
-  // Camera
   camera.x += (player.x - camera.x) * 0.1;
   camera.y += (player.y - camera.y) * 0.1;
 }
 
-function getPlayerSpeed() {
-  return calcSpeedFromAero();
-}
-
-// ─── MAIN LOOP ────────────────────────────────────────────────────────────────
+// ─── HLAVNÍ SMYČKA (GAME LOOP) ───────────────────────────────────────────────
 let lastTime = 0;
 function gameLoop(ts) {
   if (!gameRunning) { requestAnimationFrame(gameLoop); return; }
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  // Update
   updatePlayer(dt);
   for (const e of entities) { if (e.alive) updateAI(e, dt); }
   checkCollisions();
@@ -1646,19 +1699,16 @@ function gameLoop(ts) {
   for (const p of particles) { p.x+=p.vx; p.y+=p.vy; p.vx*=0.93; p.vy*=0.93; p.life-=dt; }
   particles.splice(0, particles.findIndex(p=>p.life>0));
 
-  // Draw world
   drawWorld();
 
-  // Draw food
   const cx = camera.x, cy = camera.y;
   for (const f of foodItems) { if (f.alive) drawFood(ctx, f, cx, cy); }
 
-  // Draw AI cells
   for (const e of entities) {
     if (!e.alive) continue;
     const sx = e.x - cx + W/2, sy = e.y - cy + H/2;
     if (sx < -100 || sx > W+100 || sy < -100 || sy > H+100) continue;
-    drawCell(ctx, sx, sy, e.size, e.type.color, e.angle, e.diet, null, e.pulse, e.hp, e.maxHp, false);
+    drawCell(ctx, sx, sy, e.size, e.type.color, e.angle, e.diet, null, e.pulse, e.hp, e.maxHp, false, e.cellPoints);
     ctx.save();
     ctx.font = '9px Exo 2';
     ctx.fillStyle = 'rgba(200,230,255,0.6)';
@@ -1667,7 +1717,6 @@ function gameLoop(ts) {
     ctx.restore();
   }
 
-  // Draw particles
   for (const p of particles) {
     if (p.life <= 0) continue;
     const sx = p.x - cx + W/2, sy = p.y - cy + H/2;
@@ -1679,12 +1728,10 @@ function gameLoop(ts) {
   }
   ctx.globalAlpha = 1;
 
-  // Sprint trail
   if (player.isSprinting && Math.random() < 0.4) {
     spawnParticles(player.x, player.y, '#40c0ff', 2, 1, 0.3);
   }
 
-  // Spike visual ring
   if (player.spikeActive) {
     const sx2 = W/2, sy2 = H/2;
     ctx.save();
@@ -1705,54 +1752,49 @@ function gameLoop(ts) {
     ctx.restore();
   }
 
-  // Draw player
   const color = player.diet === 'herb' ? '#4de880' : '#ff6060';
-  drawCell(ctx, W/2, H/2, player.size, color, player.angle, player.diet, true, player.pulse, player.hp, player.maxHp, true);
+  drawCell(ctx, W/2, H/2, player.size, color, player.angle, player.diet, true, player.pulse, player.hp, player.maxHp, true, player.cellPoints);
 
-  // Update UI
+  // Aktualizace uživatelského rozhraní
   document.getElementById('hpBar').style.width = (player.hp/player.maxHp*100)+'%';
   document.getElementById('xpBar').style.width = (player.xp/(player.level*100)*100)+'%';
   document.getElementById('sizeVal').textContent = (player.size/28).toFixed(1);
   document.getElementById('dnaCount').textContent = player.dna + ' DNA';
 
-  // Aero bar update
-  const aeroNow = calcAero();
+  const aeroNow = calcDynamicAero();
   document.getElementById('aeroFill').style.width = aeroNow + '%';
   document.getElementById('aeroVal').textContent = Math.round(aeroNow) + '%';
   const spNow = calcSpeedFromAero();
   document.getElementById('speedVal').textContent = spNow.toFixed(1) + ' sp';
 
-  // Sprint button cooldown overlay
   const sprintBtn = document.getElementById('sprintBtn');
   if (player.sprintActive) {
     sprintBtn.style.background = 'rgba(40,160,255,0.35)';
     sprintBtn.style.borderColor = '#40e0ff';
-    sprintBtn.querySelector('.cooldown') && (sprintBtn.querySelector('.cooldown').textContent = player.sprintTimer.toFixed(1)+'s');
+    if (sprintBtn.querySelector('.cooldown')) sprintBtn.querySelector('.cooldown').textContent = player.sprintTimer.toFixed(1)+'s';
   } else if (player.sprintCooldown > 0) {
     sprintBtn.style.background = 'rgba(0,20,60,0.5)';
     sprintBtn.style.borderColor = 'rgba(80,140,255,0.2)';
-    sprintBtn.querySelector('.cooldown') && (sprintBtn.querySelector('.cooldown').textContent = Math.ceil(player.sprintCooldown)+'s');
+    if (sprintBtn.querySelector('.cooldown')) sprintBtn.querySelector('.cooldown').textContent = Math.ceil(player.sprintCooldown)+'s';
   } else {
     sprintBtn.style.background = '';
     sprintBtn.style.borderColor = '';
-    sprintBtn.querySelector('.cooldown') && (sprintBtn.querySelector('.cooldown').textContent = '');
+    if (sprintBtn.querySelector('.cooldown')) sprintBtn.querySelector('.cooldown').textContent = '';
   }
 
-  // Spike button cooldown overlay
   const spikeBtn = document.getElementById('spikeBtn');
   if (player.spikeActive) {
     spikeBtn.style.borderColor = '#a0e060';
   } else if (player.spikeCooldown > 0) {
     spikeBtn.style.background = 'rgba(0,20,60,0.5)';
     spikeBtn.style.borderColor = 'rgba(80,140,255,0.2)';
-    spikeBtn.querySelector('.cooldown') && (spikeBtn.querySelector('.cooldown').textContent = Math.ceil(player.spikeCooldown)+'s');
+    if (spikeBtn.querySelector('.cooldown')) spikeBtn.querySelector('.cooldown').textContent = Math.ceil(player.spikeCooldown)+'s';
   } else {
     spikeBtn.style.background = '';
     spikeBtn.style.borderColor = '';
-    spikeBtn.querySelector('.cooldown') && (spikeBtn.querySelector('.cooldown').textContent = '');
+    if (spikeBtn.querySelector('.cooldown')) spikeBtn.querySelector('.cooldown').textContent = '';
   }
 
-  // Minimap
   drawMinimap();
 
   requestAnimationFrame(gameLoop);
@@ -1781,68 +1823,23 @@ function drawMinimap() {
   mmCtx.beginPath(); mmCtx.arc(50,50,49,0,Math.PI*2); mmCtx.stroke();
 }
 
-// ─── EDITOR ──────────────────────────────────────────────────────────────────
+// ─── BUNĚČNÝ EDITOR ──────────────────────────────────────────────────────────
 let currentPartCat = 'all';
 
 function buildPartsList() {
   const list = document.getElementById('partsList');
   list.innerHTML = '';
 
-  // Shape category — special handling
-  if (currentPartCat === 'shape' || currentPartCat === 'all') {
-    CELL_SHAPES.forEach(shape => {
-      const card = document.createElement('div');
-      card.className = 'partCard';
-      if (player.cellShape === shape.id) card.classList.add('equipped');
-      card.style.borderColor = shape.color + '55';
-
-      const c = document.createElement('canvas');
-      c.className = 'partCanvas';
-      c.width = 60; c.height = 60;
-      drawShapePreview(c.getContext('2d'), shape);
-      card.appendChild(c);
-
-      const name = document.createElement('div');
-      name.className = 'partName';
-      name.textContent = shape.name;
-      card.appendChild(name);
-
-      const type = document.createElement('div');
-      type.className = 'partType';
-      type.textContent = 'TVAR BUŇKY';
-      card.appendChild(type);
-
-      const stats = document.createElement('div');
-      stats.className = 'partStats';
-      const aeroColor = shape.aero >= 65 ? '#40e0ff' : (shape.aero >= 40 ? '#ffd040' : '#ff6040');
-      stats.innerHTML = `<span style="color:${aeroColor}">aerodyn: ${shape.aero}%</span>`;
-      card.appendChild(stats);
-
-      card.addEventListener('click', () => {
-        player.cellShape = shape.id;
-        recalcStats();
-        buildPartsList();
-        drawPreviewCell();
-      });
-      card.addEventListener('mouseenter', () => {
-        const tt = document.getElementById('tooltip');
-        document.getElementById('ttName').textContent = shape.name;
-        document.getElementById('ttStat1').textContent = shape.desc;
-        document.getElementById('ttStat2').textContent = `Aerodynamičnost: ${shape.aero}%`;
-        tt.style.display = 'block';
-        const rect = card.getBoundingClientRect();
-        tt.style.left = (rect.left - 170) + 'px';
-        tt.style.top = rect.top + 'px';
-      });
-      card.addEventListener('mouseleave', hideTooltip);
-      list.appendChild(card);
-    });
-
-    if (currentPartCat === 'shape') return;
-    // divider
-    const div = document.createElement('div');
-    div.style.cssText = 'grid-column:1/-1;height:1px;background:rgba(80,140,255,0.15);margin:4px 0;';
-    list.appendChild(div);
+  if (currentPartCat === 'shape') {
+    list.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 12px; text-align: center; color: #80c0ff; font-size: 11px; line-height: 1.5; background: rgba(80,140,255,0.05); border: 1px dashed rgba(80,140,255,0.2); border-radius: 8px;">
+        <span style="font-size: 20px;">🧬</span><br>
+        <strong>KREATIVNÍ TVAROVÁNÍ</strong><br><br>
+        Klikni na svítící modré body na kružnici náhledu výše a tažením myši změň tvar své buňky.<br><br>
+        Úpravy okamžitě ovlivňují hydrodynamické vlastnosti, celkovou rychlost a sílu organismu!
+      </div>
+    `;
+    return;
   }
 
   const filtered = currentPartCat === 'all' ? ALL_PARTS : ALL_PARTS.filter(p => p.cat === currentPartCat);
@@ -1886,7 +1883,7 @@ function drawPartPreview(c, part) {
   c.save();
   c.translate(30,30);
   switch(part.cat) {
-    case 'mouth':
+    case 'mouth': {
       const tempPlayer = { equippedParts: { mouth: part.id, eye: null, flagella: null, armor: null } };
       const op = player.equippedParts;
       player.equippedParts = tempPlayer.equippedParts;
@@ -1894,25 +1891,29 @@ function drawPartPreview(c, part) {
       drawDefaultEye(c, 18);
       player.equippedParts = op;
       break;
-    case 'eye':
+    }
+    case 'eye': {
       drawDefaultEye(c, 18);
       const op2 = player.equippedParts;
       player.equippedParts = { mouth: null, eye: part.id, flagella: null, armor: null };
       drawEye(c, 18, part);
       player.equippedParts = op2;
       break;
-    case 'flagella':
+    }
+    case 'flagella': {
       const op3 = player.equippedParts;
       player.equippedParts = { mouth: null, eye: null, flagella: part.id, armor: null };
       drawFlagella(c, 16, part, Date.now()*0.003);
       player.equippedParts = op3;
       break;
-    case 'armor':
+    }
+    case 'armor': {
       const op4 = player.equippedParts;
       player.equippedParts = { mouth: null, eye: null, flagella: null, armor: part.id };
       drawArmor(c, 16, part);
       player.equippedParts = op4;
       break;
+    }
   }
   c.restore();
 }
@@ -1933,6 +1934,7 @@ function recalcStats() {
   player.attack = 1;
   player.defense = 0;
   player.spikes = 0;
+  
   for (const [cat, id] of Object.entries(player.equippedParts)) {
     if (!id) continue;
     const p = ALL_PARTS.find(x => x.id === id);
@@ -1941,7 +1943,13 @@ function recalcStats() {
     if (p.stats.defense) player.defense += p.stats.defense;
     if (p.stats.spikes) player.spikes += p.stats.spikes;
   }
-  // Diet recalc
+
+  // Tvar s nízkou hladkostí (členitý, hvězdicovitý) poskytuje pasivní ostnaté poškození
+  const aero = calcDynamicAero();
+  if (aero < 45) {
+    player.spikes += Math.floor((45 - aero) / 8);
+  }
+
   const equippedDiets = Object.values(player.equippedParts)
     .filter(Boolean)
     .map(id => ALL_PARTS.find(p=>p.id===id))
@@ -1950,10 +1958,12 @@ function recalcStats() {
     .filter(d => d !== 'none');
   const carnCount = equippedDiets.filter(d=>d==='carn').length;
   const herbCount = equippedDiets.filter(d=>d==='herb').length;
+  
   if (carnCount > herbCount) player.diet = 'carn';
   else if (herbCount > carnCount) player.diet = 'herb';
   else if (carnCount === herbCount && carnCount > 0) player.diet = 'omni';
   else player.diet = playerDiet;
+  
   updateDietUI();
 }
 
@@ -1966,9 +1976,34 @@ function updateDietUI() {
 }
 
 function drawPreviewCell() {
-  previewCtx.clearRect(0,0,140,140);
+  previewCtx.clearRect(0,0,160,160);
+  
   const color = player.diet === 'herb' ? '#4de880' : '#ff6060';
-  drawCell(previewCtx, 70, 70, 38, color, 0, player.diet, true, Date.now()*0.002, 100, 100, true);
+  drawCell(previewCtx, PREVIEW_CENTER, PREVIEW_CENTER, 35, color, 0, player.diet, true, Date.now()*0.002, 100, 100, true, player.cellPoints);
+  
+  if (currentPartCat === 'shape' || currentPartCat === 'all') {
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const r = PREVIEW_RADIUS * player.cellPoints[i];
+      const px = PREVIEW_CENTER + Math.cos(angle) * r;
+      const py = PREVIEW_CENTER + Math.sin(angle) * r;
+      
+      previewCtx.strokeStyle = 'rgba(80,180,255,0.1)';
+      previewCtx.lineWidth = 1;
+      previewCtx.beginPath();
+      previewCtx.moveTo(PREVIEW_CENTER, PREVIEW_CENTER);
+      previewCtx.lineTo(px, py);
+      previewCtx.stroke();
+      
+      previewCtx.fillStyle = activeHandle === i ? '#ffd700' : '#40c0ff';
+      previewCtx.strokeStyle = '#ffffff';
+      previewCtx.lineWidth = 1.5;
+      previewCtx.beginPath();
+      previewCtx.arc(px, py, 4.5, 0, Math.PI * 2);
+      previewCtx.fill();
+      previewCtx.stroke();
+    }
+  }
 }
 
 function showTooltip(part, card) {
@@ -1987,13 +2022,14 @@ function hideTooltip() {
   document.getElementById('tooltip').style.display = 'none';
 }
 
-// ─── EDITOR TABS ─────────────────────────────────────────────────────────────
+// ─── TLAČÍTKA KATEGORIÍ V EDITORE ───────────────────────────────────────────
 document.querySelectorAll('.partTab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.partTab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentPartCat = tab.dataset.cat;
     buildPartsList();
+    drawPreviewCell();
   });
 });
 
@@ -2010,7 +2046,7 @@ document.getElementById('closeEditor').addEventListener('click', () => {
   document.getElementById('editor').classList.remove('open');
 });
 
-// ─── ABILITY BUTTONS ─────────────────────────────────────────────────────────
+// ─── AKČNÍ SCHOPNOSTI ────────────────────────────────────────────────────────
 document.getElementById('sprintBtn').addEventListener('click', () => {
   if (!gameRunning) return;
   if (player.sprintCooldown > 0) return;
@@ -2050,10 +2086,11 @@ document.getElementById('spikeBtn').addEventListener('click', () => {
     player.spikeActive = false;
     player.spikes = 0;
     document.getElementById('spikeBtn').classList.remove('active');
+    recalcStats();
   }, 3000);
 });
 
-// ─── START SCREEN ─────────────────────────────────────────────────────────────
+// ─── ÚVODNÍ OBRAZOVKA ───────────────────────────────────────────────────────
 document.querySelectorAll('.dietBtn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.dietBtn').forEach(b => b.classList.remove('selected'));
@@ -2075,12 +2112,11 @@ document.getElementById('startBtn').addEventListener('click', () => {
   requestAnimationFrame(gameLoop);
 });
 
-// Animate preview canvas periodically
+// Animace v editoru
 setInterval(() => {
   if (document.getElementById('editor').classList.contains('open')) drawPreviewCell();
 }, 50);
 
-// Start the loop rendering but paused
 requestAnimationFrame(gameLoop);
 </script>
 </body>
