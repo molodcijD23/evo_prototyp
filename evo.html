@@ -639,7 +639,6 @@
     <div class="partTab" data-cat="armor">PANCIER</div>
   </div>
 
-  <!-- Reálná fyzikální analýza tvaru buňky -->
   <div id="physicsStats">
     <div class="physicsRow">
       <span class="physicsLabel">Protáhlost (Elongace):</span>
@@ -686,7 +685,6 @@
   <button id="startBtn">ZAČÍT EVOLUCI</button>
 </div>
 
-<!-- Struktura obrazovky konce hry -->
 <div id="gameOverScreen">
   <div id="goTitle">BYL JSI POHLCEN!</div>
   <div class="goStat">Dosažená úroveň: <span id="goLevel" style="color:#ffd700; font-weight:bold;">1</span></div>
@@ -703,7 +701,7 @@ const minimapCanvas = document.getElementById('minimapCanvas');
 const mmCtx = minimapCanvas.getContext('2d');
 
 // Svět
-const WORLD = 3000;
+const WORLD = 8000;
 let W = window.innerWidth, H = window.innerHeight;
 canvas.width = W; canvas.height = H;
 
@@ -756,7 +754,7 @@ const player = {
   vx: 0, vy: 0,
   angle: 0,
   size: 28,
-  hp: 100, maxHp: 100,
+  hp: 500, maxHp: 500,
   xp: 0, level: 1,
   dna: 0,
   speed: 2.5,
@@ -1689,8 +1687,8 @@ function killPlayer() {
 
 // Funkce pro kompletní reset stavu hry
 function resetGame() {
-  player.hp = 100;
-  player.maxHp = 100;
+  player.hp = 500;
+  player.maxHp = 500;
   player.xp = 0;
   player.level = 1;
   player.dna = 0;
